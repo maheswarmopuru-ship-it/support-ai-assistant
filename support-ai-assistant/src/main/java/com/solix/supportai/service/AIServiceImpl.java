@@ -21,5 +21,28 @@ public class AIServiceImpl implements AIService {
                 .content();
 
     }
+    @Override
+    public String analyzeLog(String log) {
+
+        String prompt = """
+            You are an experienced enterprise support engineer.
+
+            Analyze the following application log.
+
+            Provide the response in the following format:
+
+            Error Summary:
+            Root Cause:
+            Suggested Resolution:
+            Confidence:
+
+            Log:
+            """ + log;
+
+        return chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+    }
 
 }

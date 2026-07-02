@@ -1,5 +1,7 @@
 package com.solix.supportai.controller;
 
+import com.solix.supportai.dto.LogAnalysisRequest;
+import com.solix.supportai.dto.LogAnalysisResponse;
 import com.solix.supportai.service.AIService;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,13 @@ public class AIController {
 
         return aiService.askAI(question);
 
+    }
+    @PostMapping("/analyze-log")
+    public LogAnalysisResponse analyzeLog(@RequestBody LogAnalysisRequest request) {
+
+        String response = aiService.analyzeLog(request.getLog());
+
+        return new LogAnalysisResponse(response);
     }
 
 }
