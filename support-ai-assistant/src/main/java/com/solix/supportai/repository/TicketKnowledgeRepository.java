@@ -12,17 +12,13 @@ public class TicketKnowledgeRepository {
 
     private final List<SupportTicket> tickets = new ArrayList<>();
 
-    @PostConstruct
-    public void loadTickets() {
-
-        // We will add sample tickets in the next step.
-
-    }
-
     public List<SupportTicket> getAllTickets() {
 
         return tickets;
 
+    }
+    public void addTickets(List<SupportTicket> newTickets) {
+        tickets.addAll(newTickets);
     }
 
 }
