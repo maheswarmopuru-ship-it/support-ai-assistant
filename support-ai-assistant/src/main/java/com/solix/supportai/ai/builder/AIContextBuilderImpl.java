@@ -1,6 +1,7 @@
 package com.solix.supportai.ai.builder;
 
 import com.solix.supportai.ai.context.AIContext;
+import com.solix.supportai.knowledge.KnowledgeExtractionService;
 import com.solix.supportai.model.SupportTicket;
 import com.solix.supportai.repository.TicketKnowledgeRepository;
 import com.solix.supportai.service.TicketSearchService;
@@ -15,11 +16,14 @@ public class AIContextBuilderImpl implements AIContextBuilder {
 
     private final TicketKnowledgeRepository repository;
     private final TicketSearchService ticketSearchService;
+    private final KnowledgeExtractionService knowledgeExtractionService;
 
     public AIContextBuilderImpl(TicketKnowledgeRepository repository,
-                                TicketSearchService ticketSearchService) {
+                                TicketSearchService ticketSearchService,
+                                KnowledgeExtractionService knowledgeExtractionService) {
         this.repository = repository;
         this.ticketSearchService = ticketSearchService;
+        this.knowledgeExtractionService = knowledgeExtractionService;
     }
 
     @Override
@@ -49,8 +53,9 @@ public class AIContextBuilderImpl implements AIContextBuilder {
                         .map(ticket ->
 
                                 "Subject : " + ticket.getSubject()
-                                        + "\nSupport Comments : "
-                                        + ticket.getSupportComments())
+                                        + "\nTechnical Notes : "
+                                        + knowledgeExtractionService.extractTechnicalKnowledge(
+                                        ticket.getSupportComments()))
 
                         .collect(Collectors.toList())
 
