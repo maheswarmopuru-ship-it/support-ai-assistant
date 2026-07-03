@@ -6,7 +6,6 @@ import java.util.List;
 
 public interface TicketSearchService {
 
-    List<SupportTicket> searchTickets(String subject,
-                                      String description);
+    List<SupportTicket> findSimilarTickets(String ticketId);
 
 }

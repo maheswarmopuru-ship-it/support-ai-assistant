@@ -5,6 +5,7 @@ import com.solix.supportai.repository.TicketKnowledgeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketSearchServiceImpl implements TicketSearchService {
@@ -16,10 +17,43 @@ public class TicketSearchServiceImpl implements TicketSearchService {
     }
 
     @Override
-    public List<SupportTicket> searchTickets(String subject,
-                                             String description) {
+    public List<SupportTicket> findSimilarTickets(String ticketId) {
 
-        return repository.getAllTickets();
+        SupportTicket currentTicket = repository.findByTicketId(ticketId);
 
+        if (currentTicket == null) {
+            throw new RuntimeException("Ticket not found : " + ticketId);
+        }
+
+        String[] keywords = currentTicket.getSubject()
+                .toLowerCase()
+                .split("\\s+");
+
+        return repository.findAll()
+                .stream()
+                .filter(ticket -> !ticket.getTicketId().equals(ticketId))
+                .filter(ticket -> {
+
+                    if (ticket.getSubject() == null)
+                        return false;
+
+                    String subject = ticket.getSubject().toLowerCase();
+
+                    int matches = 0;
+
+                    for (String keyword : keywords) {
+
+                        if (keyword.length() < 4)
+                            continue;
+
+                        if (subject.contains(keyword))
+                            matches++;
+                    }
+
+                    return matches >= 2;
+
+                })
+                .limit(5)
+                .toList();
     }
 }
