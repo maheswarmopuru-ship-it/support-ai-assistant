@@ -33,9 +33,21 @@ public class TicketKnowledgeRepository {
 
     }
 
+/*public SupportTicket findByTicketId(String ticketId) {
+
+       return ticketIndex.get(ticketId);
+
+   }*/
     public SupportTicket findByTicketId(String ticketId) {
 
-        return ticketIndex.get(ticketId);
+        return tickets.stream()
+
+                .filter(ticket ->
+                        ticket.getTicketId().equalsIgnoreCase(ticketId))
+
+                .findFirst()
+
+                .orElse(null);
 
     }
 

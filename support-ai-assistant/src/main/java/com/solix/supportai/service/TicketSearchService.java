@@ -1,11 +1,9 @@
 package com.solix.supportai.service;
 
-import com.solix.supportai.model.SupportTicket;
-
-import java.util.List;
+import com.solix.supportai.dto.SimilarTicketResponse;
 
 public interface TicketSearchService {
 
-    List<SupportTicket> findSimilarTickets(String ticketId);
+    SimilarTicketResponse findSimilarTickets(String ticketId);
 
 }

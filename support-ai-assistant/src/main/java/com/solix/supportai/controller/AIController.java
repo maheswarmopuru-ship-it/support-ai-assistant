@@ -1,5 +1,7 @@
 package com.solix.supportai.controller;
 
+import com.solix.supportai.dto.AIRecommendationRequest;
+import com.solix.supportai.dto.AIRecommendationResponse;
 import com.solix.supportai.dto.LogAnalysisRequest;
 import com.solix.supportai.dto.LogAnalysisResponse;
 import com.solix.supportai.service.AIService;
@@ -27,6 +29,12 @@ public class AIController {
         String response = aiService.analyzeLog(request.getLog());
 
         return new LogAnalysisResponse(response);
+    }
+    @PostMapping("/recommendation")
+    public AIRecommendationResponse recommendation(
+            @RequestBody AIRecommendationRequest request) {
+
+        return aiService.generateRecommendation(request.getTicketId());
     }
 
 }
