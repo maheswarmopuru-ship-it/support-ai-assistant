@@ -36,53 +36,76 @@ public class TicketEmbeddingIndexer {
     }
 
     @PostConstruct
-    public void indexFirstTicket() {
+    public void indexTickets() {
 
         List<SupportTicket> tickets = repository.findAll();
 
-        SupportTicket ticket = tickets.get(0);
+        if (tickets.isEmpty()) {
+            logger.info("No tickets found for indexing.");
+            return;
+        }
 
-        logger.info("Indexing ticket : {}", ticket.getTicketId());
+        long pointId = 1;
 
-        String technicalKnowledge =
-                knowledgeExtractionService.extractTechnicalKnowledge(
-                        ticket.getSupportComments());
+        for (SupportTicket ticket : tickets) {
 
-        String embeddingText = """
-            Subject:
-            %s
+            try {
 
-            Technical Knowledge:
-            %s
+                logger.info("Indexing ticket {} of {} : {}",
+                        pointId,
+                        tickets.size(),
+                        ticket.getTicketId());
 
-            Product:
-            %s
-            """.formatted(
-                ticket.getSubject(),
-                technicalKnowledge,
-                ticket.getProductService());
+                String technicalKnowledge =
+                        knowledgeExtractionService.extractTechnicalKnowledge(
+                                ticket.getSupportComments());
 
-        List<Double> vector =
-                embeddingService.generateEmbedding(embeddingText);
+                String embeddingText = """
+                    Subject:
+                    %s
 
-        logger.info("Embedding dimension : {}", vector.size());
+                    Technical Knowledge:
+                    %s
 
-        Map<String, Object> payload = Map.of(
-                "ticketId", ticket.getTicketId(),
-                "subject", ticket.getSubject(),
-                "company", ticket.getCompany(),
-                "product", ticket.getProductService(),
-                "priority", ticket.getPriority(),
-                "status", ticket.getStatus()
-        );
+                    Product:
+                    %s
+                    """.formatted(
+                        ticket.getSubject(),
+                        technicalKnowledge,
+                        ticket.getProductService());
 
-        qdrantService.upsertPoint(
-                "support_tickets",
-                1L,
-                vector,
-                payload);
+                List<Double> vector =
+                        embeddingService.generateEmbedding(embeddingText);
 
-        logger.info("Ticket uploaded to Qdrant.");
+                logger.info("Embedding dimension : {}", vector.size());
 
+                Map<String, Object> payload = Map.of(
+                        "ticketId", ticket.getTicketId(),
+                        "subject", ticket.getSubject(),
+                        "company", ticket.getCompany(),
+                        "product", ticket.getProductService(),
+                        "priority", ticket.getPriority(),
+                        "status", ticket.getStatus()
+                );
+
+                qdrantService.upsertPoint(
+                        "support_tickets",
+                        pointId,
+                        vector,
+                        payload);
+
+                logger.info("Uploaded ticket : {}", ticket.getTicketId());
+
+                pointId++;
+
+            } catch (Exception ex) {
+
+                logger.error("Failed to index ticket : {}",
+                        ticket.getTicketId(),
+                        ex);
+            }
+        }
+
+        logger.info("Successfully indexed {} tickets.", tickets.size());
     }
 }
