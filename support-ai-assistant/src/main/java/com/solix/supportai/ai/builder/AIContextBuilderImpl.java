@@ -4,7 +4,7 @@ import com.solix.supportai.ai.context.AIContext;
 import com.solix.supportai.knowledge.KnowledgeExtractionService;
 import com.solix.supportai.model.SupportTicket;
 import com.solix.supportai.repository.TicketKnowledgeRepository;
-import com.solix.supportai.service.TicketSearchService;
+import com.solix.supportai.search.SemanticSearchService;
 import org.springframework.stereotype.Component;
 import com.solix.supportai.dto.SimilarTicketResponse;
 
@@ -15,14 +15,14 @@ import java.util.stream.Collectors;
 public class AIContextBuilderImpl implements AIContextBuilder {
 
     private final TicketKnowledgeRepository repository;
-    private final TicketSearchService ticketSearchService;
+    private final SemanticSearchService semanticSearchService;
     private final KnowledgeExtractionService knowledgeExtractionService;
 
     public AIContextBuilderImpl(TicketKnowledgeRepository repository,
-                                TicketSearchService ticketSearchService,
+                                SemanticSearchService semanticSearchService,
                                 KnowledgeExtractionService knowledgeExtractionService) {
         this.repository = repository;
-        this.ticketSearchService = ticketSearchService;
+        this.semanticSearchService = semanticSearchService;
         this.knowledgeExtractionService = knowledgeExtractionService;
     }
 
@@ -36,7 +36,7 @@ public class AIContextBuilderImpl implements AIContextBuilder {
         }
 
         SimilarTicketResponse response =
-                ticketSearchService.findSimilarTickets(ticketId);
+                semanticSearchService.searchSimilarTickets(ticketId);
 
         List<SupportTicket> similarTickets =
                 response.getSimilarTickets();
