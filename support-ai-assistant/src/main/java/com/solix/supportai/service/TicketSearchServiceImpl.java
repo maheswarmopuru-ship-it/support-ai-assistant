@@ -1,20 +1,34 @@
 package com.solix.supportai.service;
 
+import com.solix.supportai.dto.SimilarTicketResponse;
+import com.solix.supportai.embedding.EmbeddingService;
+import com.solix.supportai.knowledge.KnowledgeExtractionService;
 import com.solix.supportai.model.SupportTicket;
+import com.solix.supportai.qdrant.QdrantService;
 import com.solix.supportai.repository.TicketKnowledgeRepository;
 import org.springframework.stereotype.Service;
-import com.solix.supportai.dto.SimilarTicketResponse;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class TicketSearchServiceImpl implements TicketSearchService {
 
     private final TicketKnowledgeRepository repository;
+    private final EmbeddingService embeddingService;
+    private final KnowledgeExtractionService knowledgeExtractionService;
+    private final QdrantService qdrantService;
 
-    public TicketSearchServiceImpl(TicketKnowledgeRepository repository) {
+    public TicketSearchServiceImpl(
+            TicketKnowledgeRepository repository,
+            EmbeddingService embeddingService,
+            KnowledgeExtractionService knowledgeExtractionService,
+            QdrantService qdrantService) {
+
         this.repository = repository;
+        this.embeddingService = embeddingService;
+        this.knowledgeExtractionService = knowledgeExtractionService;
+        this.qdrantService = qdrantService;
     }
 
     @Override
@@ -26,53 +40,49 @@ public class TicketSearchServiceImpl implements TicketSearchService {
             throw new RuntimeException("Ticket not found : " + ticketId);
         }
 
-        List<SupportTicket> similarTickets = repository.findAll()
-                .stream()
-                .filter(ticket -> !ticket.getTicketId().equals(ticketId))
-                .filter(ticket -> ticket.getSubject() != null)
-                .sorted((t1, t2) -> {
+        String technicalKnowledge =
+                knowledgeExtractionService.extractTechnicalKnowledge(
+                        currentTicket.getSupportComments());
 
-                    int score1 = calculateScore(currentTicket.getSubject(), t1.getSubject());
-                    int score2 = calculateScore(currentTicket.getSubject(), t2.getSubject());
+        String searchableText = """
+        Subject:
+        %s
 
-                    return Integer.compare(score2, score1);
+        Technical Knowledge:
+        %s
 
-                })
-                .filter(ticket ->
-                        calculateScore(currentTicket.getSubject(),
-                                ticket.getSubject()) >= 2)
+        Product:
+        %s
+        """.formatted(
+                currentTicket.getSubject() == null ? "" : currentTicket.getSubject(),
+                technicalKnowledge == null ? "" : technicalKnowledge,
+                currentTicket.getProductService() == null ? "" : currentTicket.getProductService()
+        );
+        // Generate embedding
+        List<Double> embedding =
+                embeddingService.generateEmbedding(searchableText);
+
+        // Search similar tickets in Qdrant
+        List<String> similarTicketIds =
+                qdrantService.searchSimilarTickets(
+                        "support_tickets",
+                        embedding,
+                        6);
+
+        // Load ticket objects
+        List<SupportTicket> similarTickets = similarTicketIds.stream()
+                .filter(id -> !id.equalsIgnoreCase(ticketId))
+                .map(repository::findByTicketId)
+                .filter(Objects::nonNull)
                 .limit(5)
                 .toList();
 
         SimilarTicketResponse response = new SimilarTicketResponse();
-
         response.setCurrentTicket(currentTicket);
         response.setSimilarTickets(similarTickets);
         response.setTotalMatches(similarTickets.size());
-        response.setSearchType("KEYWORD");
+        response.setSearchType("SEMANTIC");
 
         return response;
-    }
-
-    // ✅ This method is OUTSIDE findSimilarTickets()
-    private int calculateScore(String currentSubject,
-                               String candidateSubject) {
-
-        String[] keywords = currentSubject.toLowerCase().split("\\s+");
-
-        candidateSubject = candidateSubject.toLowerCase();
-
-        int score = 0;
-
-        for (String keyword : keywords) {
-
-            if (keyword.length() < 4)
-                continue;
-
-            if (candidateSubject.contains(keyword))
-                score++;
-        }
-
-        return score;
     }
 }

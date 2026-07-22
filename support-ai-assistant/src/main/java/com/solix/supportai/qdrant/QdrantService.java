@@ -14,5 +14,9 @@ public interface QdrantService {
                      List<Double> vector,
                      Map<String, Object> payload);
     int getPointCount(String collectionName);
+    List<String> searchSimilarTickets(
+            String collectionName,
+            List<Double> vector,
+            int limit);
 
 }

@@ -44,7 +44,10 @@ public class TicketEmbeddingIndexer {
             logger.info("No tickets found for indexing.");
             return;
         }
-
+        if (qdrantService.getPointCount("support_tickets") > 0) {
+            logger.info("Tickets are already indexed. Skipping indexing.");
+            return;
+        }
         long pointId = 1;
 
         for (SupportTicket ticket : tickets) {

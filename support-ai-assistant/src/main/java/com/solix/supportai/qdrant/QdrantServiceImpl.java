@@ -6,6 +6,9 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.MediaType;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @Service
 public class QdrantServiceImpl implements QdrantService {
@@ -90,14 +93,61 @@ public class QdrantServiceImpl implements QdrantService {
 
         Map<?, ?> result = (Map<?, ?>) response.get("result");
 
-        Map<?, ?> points = (Map<?, ?>) result.get("points_count");
+        Object pointsCount = result.get("points_count");
 
-        if (points == null) {
-            Object count = result.get("points_count");
-            return count == null ? 0 : ((Number) count).intValue();
+        if (pointsCount instanceof Number number) {
+            return number.intValue();
         }
 
-        return ((Number) points.get("count")).intValue();
-    }
+        if (pointsCount instanceof Map<?, ?> pointsMap) {
 
+            Object count = pointsMap.get("count");
+
+            if (count instanceof Number number) {
+                return number.intValue();
+            }
+        }
+
+        return 0;
+    }
+    @Override
+    public List<String> searchSimilarTickets(
+            String collectionName,
+            List<Double> vector,
+            int limit) {
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("vector", vector);
+        request.put("limit", limit);
+        request.put("with_payload", true);
+
+        Map<String, Object> response = restClient.post()
+                .uri("/collections/{collectionName}/points/search", collectionName)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .body(Map.class);
+
+        List<Map<String, Object>> result =
+                (List<Map<String, Object>>) response.get("result");
+
+        List<String> ticketIds = new ArrayList<>();
+
+        if (result != null) {
+
+            for (Map<String, Object> point : result) {
+
+                Map<String, Object> payload =
+                        (Map<String, Object>) point.get("payload");
+
+                if (payload != null && payload.containsKey("ticketId")) {
+
+                    ticketIds.add(payload.get("ticketId").toString());
+
+                }
+            }
+        }
+
+        return ticketIds;
+    }
     }

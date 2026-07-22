@@ -19,12 +19,21 @@ public class TicketKnowledgeRepository {
 
         for (SupportTicket ticket : tickets) {
 
-            ticketIndex.put(ticket.getTicketId(), ticket);
+            System.out.println("Loaded Ticket: [" + ticket.getTicketId() + "]");
 
+            if (ticket.getTicketId() != null &&
+                    !ticket.getTicketId().trim().isEmpty()) {
+
+                String normalizedId = ticket.getTicketId()
+                        .trim()
+                        .replace("\\", "/")
+                        .toUpperCase();
+
+                ticketIndex.put(normalizedId, ticket);
+            }
         }
-
-        System.out.println("Tickets Loaded : " + tickets.size());
-
+        System.out.println("Total Tickets Loaded : " + tickets.size());
+        System.out.println("Total Indexed Tickets : " + ticketIndex.size());
     }
 
     public List<SupportTicket> findAll() {
@@ -32,23 +41,18 @@ public class TicketKnowledgeRepository {
         return tickets;
 
     }
-
-/*public SupportTicket findByTicketId(String ticketId) {
-
-       return ticketIndex.get(ticketId);
-
-   }*/
     public SupportTicket findByTicketId(String ticketId) {
 
-        return tickets.stream()
+        if (ticketId == null) {
+            return null;
+        }
 
-                .filter(ticket ->
-                        ticket.getTicketId().equalsIgnoreCase(ticketId))
+        String normalizedId = ticketId
+                .trim()
+                .replace("\\", "/")
+                .toUpperCase();
 
-                .findFirst()
-
-                .orElse(null);
-
+        return ticketIndex.get(normalizedId);
     }
 
 }

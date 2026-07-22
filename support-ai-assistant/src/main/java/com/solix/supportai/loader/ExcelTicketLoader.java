@@ -38,9 +38,16 @@ public class ExcelTicketLoader {
                     continue;
                 }
 
+                String ticketId = getCellValue(row.getCell(0));
+
+// Skip blank rows
+                if (ticketId == null || ticketId.trim().isEmpty()) {
+                    continue;
+                }
+
                 SupportTicket ticket = new SupportTicket();
 
-                ticket.setTicketId(getCellValue(row.getCell(0)));
+                ticket.setTicketId(ticketId);
                 ticket.setAssignedTo(getCellValue(row.getCell(1)));
                 ticket.setReportedBy(getCellValue(row.getCell(2)));
                 ticket.setCompany(getCellValue(row.getCell(3)));
